@@ -1,0 +1,99 @@
+# Render completo del Vlog 4K en GitHub Actions, paralelo por tramos. $0 (tier gratis).
+# Fases: (1) plan = calcula los frameRanges; (2) render = matrix de runners, cada uno un tramo,
+# baja piezas de R2, renderiza su frameRange, sube el parcial a R2; (3) concat = une el MP4 4K final.
+name: render-completo
+
+on:
+  workflow_dispatch:
+    inputs:
+      segment:
+        description: "Frames por tramo (más chico = más runners en paralelo)"
+        default: "2500"
+      rangos:
+        description: "Modo rescate: JSON de tramos a re-renderizar, p.ej. [{\"idx\":\"00\",\"from\":0,\"to\":1249}]"
+        default: ""
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.calc.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - id: calc
+        working-directory: video
+        env:
+          SEGMENT: ${{ github.event.inputs.segment }}
+          RANGOS: ${{ github.event.inputs.rangos }}
+        run: node calc_tramos.mjs
+
+  render:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        tramo: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Liberar espacio en disco
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost /usr/share/swift
+          sudo docker image prune --all --force || true
+      - name: Mover el peso (piezas + caché de Remotion) al disco grande /mnt (~65 GB)
+        working-directory: video
+        run: |
+          sudo mkdir -p /mnt/work/china/subs /mnt/work/tmp
+          sudo chmod -R 777 /mnt/work
+          cp public/china/subs/captions.json /mnt/work/china/subs/captions.json
+          rm -rf public/china
+          ln -sfn /mnt/work/china public/china
+          df -h / /mnt
+      - name: Instalar dependencias
+        working-directory: video
+        run: npm ci || npm install
+      - name: Asegurar el navegador de Remotion
+        working-directory: video
+        run: npx remotion browser ensure
+      - name: Renderizar tramo
+        working-directory: video
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          FROM: ${{ matrix.tramo.from }}
+          TO: ${{ matrix.tramo.to }}
+          IDX: ${{ matrix.tramo.idx }}
+          TMPDIR: /mnt/work/tmp
+        run: node render_tramo.mjs
+
+  concat:
+    needs: render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Instalar dependencias
+        working-directory: video
+        run: npm ci || npm install
+      - name: Concatenar el MP4 4K final
+        working-directory: video
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: node concatenar_tramos.mjs

@@ -1,0 +1,38 @@
+{
+  "fps": 60,
+  "fuente": "descript_4k",
+  "bloques": [
+    {
+      "tipo": "cold_open",
+      "frags": [
+        { "video": "broll/IMG_8512.mp4", "dur": 5.0, "vo": { "src": "escenas/vlog_p1.mp4", "from": 0.6, "dur": 3.8 } },
+        { "video": "broll/IMG_8394.mp4", "dur": 6.2, "vo": { "src": "escenas/vlog_p1.mp4", "from": 4.7, "dur": 5.8 } },
+        { "video": "escenas/vlog_p1.mp4", "from": 10.5, "dur": 7.2, "conAudio": true },
+        { "video": "escenas/trading_1_IMG8483.mp4", "from": 2.2, "dur": 6.5, "conAudio": true, "grade": "B1" },
+        { "video": "broll/IMG_8505.mp4", "dur": 4.0, "vo": { "src": "escenas/trading_1_IMG8483.mp4", "from": 13.4, "dur": 3.5 } },
+        { "video": "broll/IMG_8514.mp4", "dur": 4.5 }
+      ]
+    },
+    { "tipo": "title_card" },
+    {
+      "tipo": "habla", "video": "escenas/vlog_p1.mp4", "dur": 168.55, "grade": "C1", "zoom": "punch",
+      "broll": ["broll/IMG_8399.mp4", "broll/IMG_8472.mp4", "broll/IMG_8466.mp4"]
+    },
+    { "tipo": "trading", "video": "escenas/trading_1_IMG8483.mp4", "dur": 60.03, "grade": "B1", "zoom": "panzoom" },
+    {
+      "tipo": "habla", "video": "escenas/vlog_p2.mp4", "dur": 230.04, "grade": "C1", "zoom": "punch",
+      "broll": ["broll/IMG_8488.mp4", "broll/IMG_8431.mp4", "broll/IMG_8443.mp4"]
+    },
+    { "tipo": "trading", "video": "escenas/trading_2_IMG8495.mp4", "dur": 27.91, "grade": "B1", "zoom": "panzoom" },
+    {
+      "tipo": "habla", "video": "escenas/vlog_p3.mp4", "dur": 191.61, "grade": "C1", "zoom": "punch",
+      "broll": ["broll/IMG_8477.mp4", "broll/IMG_8503.mp4", "broll/IMG_8446.mp4"]
+    },
+    { "tipo": "trading", "video": "escenas/trading_3_IMG8507.mp4", "dur": 13.05, "grade": "B1", "zoom": "panzoom" },
+    {
+      "tipo": "habla", "video": "escenas/vlog_p4.mp4", "dur": 79.16, "grade": "C1", "zoom": "punch",
+      "broll": ["broll/IMG_8500.mp4", "broll/IMG_8493.mp4"]
+    },
+    { "tipo": "outro", "video": "broll/IMG_8500.mp4" }
+  ]
+}
