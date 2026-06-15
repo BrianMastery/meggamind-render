@@ -17,7 +17,7 @@ const TO = Number(E.TO ?? 0);
 const IDX = E.IDX ?? "00";
 const CONCURRENCY = E.CONCURRENCY ?? "2";
 const OFFTHREAD_CACHE = E.OFFTHREAD_CACHE ?? "268435456"; // 256MB; el runner privado tiene 7GB
-const CRF = E.CRF ?? "16";                                 // 16 = alta calidad 4K (menor = mejor)
+const CRF = E.CRF ?? "15";                                 // 15 = muy alta calidad 4K (menor = mejor)
 const OUT_KEY = `render/tramos/seg_${IDX}.mp4`;
 
 const s3 = new S3Client({

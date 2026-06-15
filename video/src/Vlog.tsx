@@ -160,7 +160,9 @@ const LowerThird: React.FC<{ titulo: string; sub?: string; entra: number; dur: n
   );
 };
 
-// Overlays de B-roll repartidos sobre el bloque (mudos; el audio del spine sigue). Push lento, no por reloj rígido.
+// Overlays de B-roll repartidos sobre el bloque (mudos; el audio del spine sigue).
+// PLANOS QUIETOS: sin push por sistema (lo prohíbe la spec) y sin el movimiento artificial que
+// generaba bloques de compresión. Fade corto de entrada/salida, nada más.
 const Overlays: React.FC<{ broll: string[]; total: number }> = ({ broll, total }) => {
   const { fps } = useVideoConfig();
   const n = broll.length;
@@ -174,15 +176,24 @@ const Overlays: React.FC<{ broll: string[]; total: number }> = ({ broll, total }
         const start = Math.max(0, Math.round(margen + (i + 1) * paso - dur / 2));
         return (
           <Sequence key={i} from={start} durationInFrames={dur}>
-            <Grade preset="A1">
-              <PushSlow durFrames={dur} dir={i % 2 === 0 ? "in" : "out"}>
-                <OffthreadVideo src={vidUrl(bl)} muted toneMapped={false} />
-              </PushSlow>
-            </Grade>
+            <BrollQuieto dur={dur}>
+              <OffthreadVideo src={vidUrl(bl)} muted toneMapped={false} />
+            </BrollQuieto>
           </Sequence>
         );
       })}
     </>
+  );
+};
+
+// B-roll quieto con grade A1 y fade corto (sin zoom). Cero movimiento artificial = cero bloques.
+const BrollQuieto: React.FC<{ dur: number; children: React.ReactNode }> = ({ dur, children }) => {
+  const f = useCurrentFrame();
+  const op = interpolate(f, [0, 8, dur - 8, dur], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return (
+    <AbsoluteFill style={{ opacity: op }}>
+      <Grade preset="A1">{children}</Grade>
+    </AbsoluteFill>
   );
 };
 
@@ -204,9 +215,7 @@ const ColdOpen: React.FC<{ frags: Frag[] }> = ({ frags }) => {
         return (
           <Sequence key={i} from={from} durationInFrames={dur}>
             <Grade preset={fr.grade ?? "A1"}>
-              <PushSlow durFrames={dur} dir={i % 2 === 0 ? "in" : "out"}>
-                <OffthreadVideo src={vidUrl(fr.video)} trimBefore={Math.round((fr.from ?? 0) * fps)} muted={!fr.conAudio} toneMapped={false} />
-              </PushSlow>
+              <OffthreadVideo src={vidUrl(fr.video)} trimBefore={Math.round((fr.from ?? 0) * fps)} muted={!fr.conAudio} toneMapped={false} />
             </Grade>
             {fr.vo && (
               <Audio src={vidUrl(fr.vo.src)} trimBefore={Math.round(fr.vo.from * fps)} trimAfter={Math.round((fr.vo.from + fr.vo.dur) * fps)} />
@@ -229,9 +238,7 @@ const Outro: React.FC<{ video?: string }> = ({ video }) => {
     <AbsoluteFill style={{ backgroundColor: "#05070A" }}>
       {video && (
         <AbsoluteFill style={{ opacity: fadeOut }}>
-          <Grade preset="A1">
-            <PushSlow durFrames={dur} dir="out"><OffthreadVideo src={vidUrl(video)} muted toneMapped={false} /></PushSlow>
-          </Grade>
+          <Grade preset="A1"><OffthreadVideo src={vidUrl(video)} muted toneMapped={false} /></Grade>
         </AbsoluteFill>
       )}
       <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", opacity: textOp * fadeOut }}>
