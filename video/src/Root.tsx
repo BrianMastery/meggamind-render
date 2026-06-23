@@ -63,7 +63,8 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{ formato: "youtube", captions: DEMO_CAPTIONS } as SubtitulosProps}
         calculateMetadata={calcSubs}
       />
-      {/* Máster 4K (pedido de Brian). Los textos escalan con la altura (k = height/1080). */}
+      {/* Máster: lee render_plan.json. modo "proxy" (1080p, preview fluido) o "4k" (horneo en la nube).
+          calcVlog fija dimensiones/duración/props desde el plan. Los textos escalan con k = height/1080. */}
       <Composition
         id="Vlog"
         component={Vlog}
@@ -71,7 +72,7 @@ export const RemotionRoot: React.FC = () => {
         width={3840}
         height={2160}
         durationInFrames={300}
-        defaultProps={{ fps: 60, bloques: [] } as VlogProps}
+        defaultProps={{ plan: { fps: 60, modo: "4k", fuentes: {}, timeline: [] }, subs: [] } as VlogProps}
         calculateMetadata={calcVlog}
       />
     </>

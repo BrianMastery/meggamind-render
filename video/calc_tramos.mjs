@@ -6,9 +6,15 @@ import { appendFile } from "node:fs/promises";
 
 const SEGMENT = Number(process.env.SEGMENT) || 2500; // vacío/0/NaN -> 2500 (margen de disco/caché en /mnt)
 
+// bloqueDur: réplica EXACTA de la export bloqueDur de src/Vlog.tsx. Si cambia una, cambia la otra.
 function bloqueDur(b, fps) {
   if (b.tipo === "habla" || b.tipo === "trading") return Math.max(1, Math.round((b.dur ?? 1) * fps));
-  if (b.tipo === "title_card") return Math.round(2.5 * fps);
+  if (b.tipo === "trailer") return Math.round((b.dur ?? 8.4) * fps);
+  if (b.tipo === "title_card") return Math.round(5.5 * fps);
+  if (b.tipo === "montage") {
+    const cs = b.clips ?? []; const cross = Math.round(0.3 * fps);
+    return cs.reduce((s, c) => s + Math.round(c.dur * fps), 0) - Math.max(0, cs.length - 1) * cross || Math.round(6 * fps);
+  }
   if (b.tipo === "cold_open")
     return (b.frags ?? []).reduce((s, fr) => s + Math.round(fr.dur * fps), 0) || Math.round(6 * fps);
   if (b.tipo === "outro") return Math.round(8 * fps);
@@ -28,7 +34,7 @@ if (process.env.RANGOS && process.env.RANGOS.trim()) {
 
 const plan = JSON.parse(await readFile("public/render_plan.json", "utf8"));
 const fps = plan.fps ?? 60;
-const total = Math.max(fps, (plan.bloques ?? []).reduce((s, b) => s + bloqueDur(b, fps), 0));
+const total = Math.max(fps, (plan.timeline ?? plan.bloques ?? []).reduce((s, b) => s + bloqueDur(b, fps), 0));
 
 const tramos = [];
 for (let from = 0, i = 0; from < total; from += SEGMENT, i++) {

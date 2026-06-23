@@ -1,0 +1,55 @@
+name: graficos
+on:
+  workflow_dispatch:
+    inputs:
+      segment: { description: "Frames por tramo", default: "4000" }
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs: { matrix: "${{ steps.calc.outputs.matrix }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - id: calc
+        working-directory: video
+        env: { SEGMENT: "${{ github.event.inputs.segment }}" }
+        run: node calc_tramos.mjs
+  render:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: { tramo: "${{ fromJSON(needs.plan.outputs.matrix) }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - working-directory: video
+        run: npm ci || npm install
+      - working-directory: video
+        run: npx remotion browser ensure
+      - working-directory: video
+        run: |
+          mkdir -p out
+          npx remotion render Vlog out/g_${{ matrix.tramo.idx }}.webm \
+            --codec=vp9 --pixel-format=yuva420p \
+            --frames=${{ matrix.tramo.from }}-${{ matrix.tramo.to }} \
+            --concurrency=2 --log=error
+      - uses: actions/upload-artifact@v4
+        with: { name: "g-${{ matrix.tramo.idx }}", path: "video/out/g_${{ matrix.tramo.idx }}.webm", retention-days: 3 }
+  concat:
+    needs: render
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - uses: actions/download-artifact@v4
+        with: { pattern: "g-*", path: parts, merge-multiple: true }
+      - run: |
+          for f in $(ls parts/g_*.webm | sort); do echo "file '$PWD/$f'" >> list.txt; done
+          cat list.txt
+          ffmpeg -y -f concat -safe 0 -i list.txt -c copy graficos_alpha.webm
+      - uses: actions/upload-artifact@v4
+        with: { name: graficos-webm, path: graficos_alpha.webm, retention-days: 3 }
