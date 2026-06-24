@@ -128,6 +128,10 @@ async function main() {
   console.log(`[tramo ${IDX}] remotion render --frames=${FROM}-${TO} concurrency=${CONCURRENCY}`);
   await run("npx", ["remotion", "render", "Vlog", out,
     `--frames=${FROM}-${TO}`, `--concurrency=${CONCURRENCY}`,
+    // El cuerpo 4K (vlog_nitido_final.mp4) pesa ~6GB; el primer seek/indexado tarda >28s
+    // (default) y disparaba delayRender timeout en el frame del 1er fotograma de habla.
+    // 5 min cubre el indexado inicial del archivo grande.
+    `--timeout=300000`,
     `--offthreadvideo-cache-size-in-bytes=${OFFTHREAD_CACHE}`]);
 
   const mb = (await stat(out)).size / 1e6;
