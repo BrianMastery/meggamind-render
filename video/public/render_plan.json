@@ -25,12 +25,11 @@
   },
   "timeline": [
     {
-      "tipo": "trailer",
-      "dur": 15.5,
+      "tipo": "title_card",
       "clips": [
         {
-          "clip": "trailer_standalone.mp4",
-          "dur": 15.5
+          "clip": "broll/titlecard.mp4",
+          "dur": 5.5
         }
       ]
     },
@@ -140,7 +139,7 @@
       "lowerThirds": [
         {
           "titulo": "Huanglong National Park",
-          "sub": "Sichuan \u00b7 China",
+          "sub": "Sichuan · China",
           "at": 133.0,
           "dur": 4.5
         }
@@ -235,6 +234,5 @@
       "whoosh": true
     }
   ],
-  "audio": "audio_full.m4a",
-  "soloGraficos": true
+  "audio": "audio_mezcla.m4a"
 }

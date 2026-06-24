@@ -1,0 +1,74 @@
+# Render COMPLETO del Vlog en 4K (modo 4k, edición EXACTA de Remotion: cortes, zooms, subs, chips,
+# transiciones). Paralelo por tramos. R2 SOLO guarda las fuentes; los tramos y el final salen como
+# ARTIFACTS (no a R2 -> no se desborda el tier gratis con el 4K). Salida: artifact "vlog-4k".
+name: render4k
+on:
+  workflow_dispatch:
+    inputs:
+      segment: { description: "Frames por tramo", default: "2500" }
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs: { matrix: "${{ steps.calc.outputs.matrix }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - id: calc
+        working-directory: video
+        env: { SEGMENT: "${{ github.event.inputs.segment }}" }
+        run: node calc_tramos.mjs
+  render:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: { tramo: "${{ fromJSON(needs.plan.outputs.matrix) }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Liberar espacio
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost /usr/share/swift; sudo docker image prune --all --force || true
+      - name: Mover trabajo a /mnt (disco grande)
+        working-directory: video
+        run: |
+          sudo mkdir -p /mnt/work/china/subs /mnt/work/tmp; sudo chmod -R 777 /mnt/work
+          cp -r public/china/subs/* /mnt/work/china/subs/ 2>/dev/null || true
+          rm -rf public/china; ln -sfn /mnt/work/china public/china
+      - working-directory: video
+        run: npm ci || npm install
+      - working-directory: video
+        run: npx remotion browser ensure
+      - name: Render tramo (artifact, sin R2)
+        working-directory: video
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          FROM: ${{ matrix.tramo.from }}
+          TO: ${{ matrix.tramo.to }}
+          IDX: ${{ matrix.tramo.idx }}
+          SKIP_UPLOAD: "1"
+          TMPDIR: /mnt/work/tmp
+        run: node render_tramo.mjs
+      - uses: actions/upload-artifact@v4
+        with: { name: "seg-${{ matrix.tramo.idx }}", path: "video/out/seg_${{ matrix.tramo.idx }}.mp4", retention-days: 3 }
+  concat:
+    needs: render
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - uses: actions/download-artifact@v4
+        with: { pattern: "seg-*", path: parts, merge-multiple: true }
+      - run: |
+          ls -la parts/
+          for f in $(ls parts/seg_*.mp4 | sort); do echo "file '$PWD/$f'" >> list.txt; done
+          cat list.txt
+          ffmpeg -y -f concat -safe 0 -i list.txt -c:v copy -c:a aac -b:a 320k -movflags +faststart VLOG_CHINA_4K.mp4
+          ffmpeg -hide_banner -i VLOG_CHINA_4K.mp4 2>&1 | grep -E "Duration|Video:|Audio:" || true
+      - uses: actions/upload-artifact@v4
+        with: { name: vlog-4k, path: VLOG_CHINA_4K.mp4, retention-days: 5 }

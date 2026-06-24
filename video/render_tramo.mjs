@@ -17,7 +17,6 @@ const TO = Number(E.TO ?? 0);
 const IDX = E.IDX ?? "00";
 const CONCURRENCY = E.CONCURRENCY ?? "2";
 const OFFTHREAD_CACHE = E.OFFTHREAD_CACHE ?? "268435456"; // 256MB; el runner privado tiene 7GB
-const CRF = E.CRF ?? "15";                                 // 15 = muy alta calidad 4K (menor = mejor)
 const OUT_KEY = `render/tramos/seg_${IDX}.mp4`;
 
 const s3 = new S3Client({
@@ -37,30 +36,49 @@ function run(cmd, args) {
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// bloqueDur: réplica EXACTA de src/Vlog.tsx (para ubicar cada bloque en la timeline).
+// bloqueDur: réplica EXACTA de la export bloqueDur de src/Vlog.tsx. Si cambia una, cambia la otra.
 function bloqueDur(b, fps) {
   if (b.tipo === "habla" || b.tipo === "trading") return Math.max(1, Math.round((b.dur ?? 1) * fps));
-  if (b.tipo === "title_card") return Math.round(2.5 * fps);
+  if (b.tipo === "trailer") return Math.round((b.dur ?? 8.4) * fps);
+  if (b.tipo === "title_card") return Math.round(5.5 * fps);
+  if (b.tipo === "montage") {
+    const cs = b.clips ?? []; const cross = Math.round(0.3 * fps);
+    return cs.reduce((s, c) => s + Math.round(c.dur * fps), 0) - Math.max(0, cs.length - 1) * cross || Math.round(6 * fps);
+  }
   if (b.tipo === "cold_open")
     return (b.frags ?? []).reduce((s, fr) => s + Math.round(fr.dur * fps), 0) || Math.round(6 * fps);
   if (b.tipo === "outro") return Math.round(8 * fps);
   return fps;
 }
 
-// Solo las piezas de los bloques que se solapan con [from, to]: un tramo no necesita las 22
-// piezas (ahorra disco y descarga). Remotion no monta los bloques fuera del rango renderizado.
+// La fuente de video (habla/trading) según el modo, igual que fuenteUrl() de Vlog.tsx.
+function fuenteFile(plan, clave) {
+  const f = (plan.fuentes ?? {})[clave];
+  if (!f) return null;
+  return plan.modo === "proxy" ? f.proxy : f.full;
+}
+
+// Piezas (claves relativas a china/) que el tramo [from,to] necesita de R2. Solo los bloques que se
+// solapan con el rango -> ahorra disco/descarga. Esquema timeline (b.tipo/b.clips/b.broll/b.fuente).
 function piezasDelTramo(plan, from, to) {
   const fps = plan.fps ?? 60;
   const s = new Set();
+  // Globales: cubren TODO el timeline desde el frame 0 -> todo tramo los necesita.
+  if (plan.audio) s.add(plan.audio);                 // audio_full.m4a (mezcla única)
+  s.add("subs/subs.json");                            // subtítulos (fetch de calcVlog)
+  for (const sfx of ["audio/sfx/sub_drop.mp3", "audio/sfx/whip_swoosh.mp3", "audio/sfx/impact_cian.mp3"]) s.add(sfx);
   let acc = 0;
-  for (const b of plan.bloques ?? []) {
+  for (const b of plan.timeline ?? plan.bloques ?? []) {
     const dur = bloqueDur(b, fps);
     const ini = acc, fin = acc + dur - 1;
     acc += dur;
-    if (fin < from || ini > to) continue; // no intersecta el tramo
-    if (b.video) s.add(b.video);
-    for (const f of b.frags ?? []) { if (f.video) s.add(f.video); if (f.vo?.src) s.add(f.vo.src); }
-    for (const br of b.broll ?? []) s.add(br);
+    if (fin < from || ini > to) continue;            // no intersecta el tramo
+    const fu = fuenteFile(plan, b.fuente ?? (b.tipo === "habla" || b.tipo === "trading" ? "vlog" : null));
+    if (fu) s.add(fu);
+    for (const c of b.clips ?? []) { if (c.clip) s.add(c.clip); }      // trailer/title_card/montage
+    for (const br of b.broll ?? []) { if (br.clip) s.add(br.clip); }   // cutaways
+    for (const v of b.vertical ?? []) { if (v.clip) s.add(v.clip); if (v.clip2) s.add(v.clip2); }
+    for (const f of b.frags ?? []) { if (f.video) s.add(f.video); if (f.vo?.src) s.add(f.vo.src); } // cold_open
   }
   return [...s];
 }
@@ -107,13 +125,18 @@ async function main() {
 
   const out = path.resolve("out", `seg_${IDX}.mp4`);
   await mkdir(path.dirname(out), { recursive: true });
-  console.log(`[tramo ${IDX}] remotion render --frames=${FROM}-${TO} concurrency=${CONCURRENCY} crf=${CRF}`);
+  console.log(`[tramo ${IDX}] remotion render --frames=${FROM}-${TO} concurrency=${CONCURRENCY}`);
   await run("npx", ["remotion", "render", "Vlog", out,
     `--frames=${FROM}-${TO}`, `--concurrency=${CONCURRENCY}`,
-    `--crf=${CRF}`,                          // calidad alta de salida (16 ~ visualmente sin pérdida en 4K)
     `--offthreadvideo-cache-size-in-bytes=${OFFTHREAD_CACHE}`]);
 
   const mb = (await stat(out)).size / 1e6;
+  // SKIP_UPLOAD: dejar el seg_IDX.mp4 local para que el workflow lo suba como ARTIFACT (no a R2,
+  // así R2 solo guarda las fuentes y no se desborda con los tramos del 4K).
+  if (E.SKIP_UPLOAD) {
+    console.log(`[tramo ${IDX}] ${mb.toFixed(0)} MB local (artifact, sin R2) ✓`);
+    return;
+  }
   console.log(`[tramo ${IDX}] subiendo ${mb.toFixed(0)} MB -> ${OUT_KEY}`);
   await s3.send(new PutObjectCommand({ Bucket: E.R2_BUCKET, Key: OUT_KEY, Body: await readFile(out) }));
   console.log(`[tramo ${IDX}] LISTO ✓`);
