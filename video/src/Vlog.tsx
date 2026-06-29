@@ -39,7 +39,10 @@ const Grade: React.FC<{ preset?: GradeT; liviano?: boolean; children: React.Reac
   // En proxy (preview en la Mac vieja) NADA de color: ni filtro ni viñetas ni blend modes. Solo el
   // video crudo, para que el preview vaya fluido y Brian dirija estructura/broll/zooms/timing. Todo
   // el grade (filtro + viñeta + spotlight + split-tone del Bloque E) se aplica solo en el render 4K.
-  if (liviano) return <>{children}</>;
+  // SIN_COLOR: grade DESACTIVADO para este render (cuerpo en color PLANO/NEUTRO). El grade va
+  // despues, una sola vez, en Resolve sobre todo el video junto. Volver a false para reactivarlo.
+  const SIN_COLOR = true;
+  if (liviano || SIN_COLOR) return <>{children}</>;
   return (
     <AbsoluteFill style={{ filter: FILTRO[preset] ?? FILTRO.C1 }}>
       {children}
