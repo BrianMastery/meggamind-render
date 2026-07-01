@@ -46,7 +46,7 @@ export type Bloque = {
   bloopers?: Rango[];       // rangos a SALTAR dentro del bloque (B1), relativos al bloque
   zoom?: Zoom[];            // zooms del bloque (relativos al bloque)
   broll?: Broll[];          // cutaways (relativos al bloque)
-  cortes?: { src: string; at: number; in: number; dur: number }[]; // edicion nativa por cortes
+  cortes?: { src: string; at: number; in: number; dur: number; psrc?: string }[]; // edición nativa: secuencia de tomas (cara conform + paisaje crudos), Remotion ensambla (sin cuerpo a mano). psrc = proxy pre-cortado por toma (archivo chico) para preview fluido; el render 4k usa src+in nativos.
   lowerThirds?: LowerThird[];
   chips?: Chip[];
   vertical?: Vertical[];
@@ -64,10 +64,6 @@ export type RenderPlan = {
   fps: number;
   // "proxy" = preview 1080p fluido en la Mac; "4k" = horneo final en la nube.
   modo: "proxy" | "4k";
-  // soloGraficos=true: render SOLO de las capas gráficas (subs, chips, lower-thirds, transiciones)
-  // sobre fondo TRANSPARENTE, sin el video de fondo ni audio. Para el pipeline HDR: el cuerpo va en
-  // HDR por ffmpeg y esta capa alpha se compone encima. El video HDR no pasa por Chrome (que es SDR).
-  soloGraficos?: boolean;
   // Cada fuente con su versión nítida (conform de crudos) y su proxy 1080p.
   fuentes: Record<string, { full: string; proxy: string }>;
   timeline: Bloque[];
@@ -80,6 +76,8 @@ export type RenderPlan = {
 // Resolución del canvas según el modo (proxy 1080p / 4k 2160p). La fuente 4K sobre timeline 1080p
 // da nitidez y headroom de zoom; el 4K final usa el canvas completo.
 export const CANVAS = {
-  proxy: { width: 1280, height: 720 },   // preview liviano para la Mac 2018 (decodifica/compone menos)
+  // Preview 4K real: la Mac 2018 reproduce un solo H264 4K con fluidez (validado). El preview ahora
+  // es 4K nativo (mismas fuentes 4K H264 en china/proxy), así lo que ves ES lo que se renderiza.
+  proxy: { width: 3840, height: 2160 },
   "4k": { width: 3840, height: 2160 },
 } as const;

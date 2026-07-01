@@ -1,6 +1,6 @@
 {
  "fps": 60,
- "modo": "4k",
+ "modo": "proxy",
  "fuentes": {
   "vlog": {
    "full": "vlog_nitido.mp4",
@@ -27,10 +27,48 @@
   {
    "tipo": "trailer",
    "dur": 15.5,
-   "clips": [
+   "cortes": [
     {
-     "clip": "trailer_standalone.mp4",
-     "dur": 15.5
+     "src": "trading_nitido.mp4",
+     "at": 0.0,
+     "in": 20.5,
+     "dur": 3.84,
+     "psrc": "seg/b0_00.mp4"
+    },
+    {
+     "src": "dia2/IMG_8488.MOV",
+     "at": 3.84,
+     "in": 3.0,
+     "dur": 2.82,
+     "psrc": "seg/b0_01.mp4"
+    },
+    {
+     "src": "dia1/IMG_8409.MOV",
+     "at": 6.66,
+     "in": 2.5,
+     "dur": 2.43,
+     "psrc": "seg/b0_02.mp4"
+    },
+    {
+     "src": "dia2/IMG_8479.MOV",
+     "at": 9.09,
+     "in": 3.0,
+     "dur": 2.05,
+     "psrc": "seg/b0_03.mp4"
+    },
+    {
+     "src": "dia2/IMG_8488.MOV",
+     "at": 11.14,
+     "in": 3.0,
+     "dur": 2.43,
+     "psrc": "seg/b0_04.mp4"
+    },
+    {
+     "src": "dia1/IMG_8409.MOV",
+     "at": 13.57,
+     "in": 2.5,
+     "dur": 1.93,
+     "psrc": "seg/b0_05.mp4"
     }
    ]
   },
@@ -140,7 +178,7 @@
    "lowerThirds": [
     {
      "titulo": "Huanglong National Park",
-     "sub": "Sichuan \u00b7 China",
+     "sub": "Sichuan · China",
      "at": 133.0,
      "dur": 4.5
     }
@@ -168,392 +206,527 @@
     {
      "src": "vlog_nitido.mp4",
      "at": 0.0,
-     "in": 0,
-     "dur": 3.0
+     "in": 0.0,
+     "dur": 3.0,
+     "psrc": "seg/b1_00.mp4"
     },
     {
      "src": "dia1/IMG_8391.MOV",
      "at": 3.0,
      "in": 2.0,
-     "dur": 3.0
+     "dur": 3.0,
+     "psrc": "seg/b1_01.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 6.0,
-     "in": 6.1,
-     "dur": 10.0
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 16.0,
-     "in": 15.625,
-     "dur": 0.5
+     "in": 6.0,
+     "dur": 10.5,
+     "psrc": "seg/b1_02.mp4"
     },
     {
      "src": "dia1/IMG_8394.MOV",
      "at": 16.5,
      "in": 2.0,
-     "dur": 4.0
+     "dur": 4.0,
+     "psrc": "seg/b1_03.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 20.5,
      "in": 20.5,
-     "dur": 2.5
+     "dur": 2.5,
+     "psrc": "seg/b1_04.mp4"
     },
     {
      "src": "dia2/IMG_8466.MOV",
      "at": 23.0,
      "in": 2.0,
-     "dur": 3.5
+     "dur": 3.5,
+     "psrc": "seg/b1_05.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 26.5,
-     "in": 26.6,
-     "dur": 26.0
+     "in": 26.5,
+     "dur": 26.0,
+     "psrc": "seg/b1_06.mp4"
     },
     {
      "src": "dia1/IMG_8409.MOV",
      "at": 52.5,
      "in": 2.0,
-     "dur": 5.0
+     "dur": 5.0,
+     "psrc": "seg/b1_07.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 57.5,
-     "in": 57.8,
-     "dur": 45.0
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 102.5,
-     "in": 0.0,
-     "dur": 5.25
+     "in": 57.5,
+     "dur": 50.25,
+     "psrc": "seg/b1_08.mp4"
     },
     {
      "src": "dia1/IMG_8409.MOV",
      "at": 107.75,
-     "in": 0,
-     "dur": 4.0
+     "in": 2.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_09.mp4"
+    },
+    {
+     "src": "dia1/IMG_8409.MOV",
+     "at": 109.25,
+     "in": 3.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_10.mp4"
+    },
+    {
+     "src": "dia1/IMG_8417.MOV",
+     "at": 110.75,
+     "in": 2.5,
+     "dur": 1.5,
+     "psrc": "seg/b1_11.mp4"
+    },
+    {
+     "src": "dia1/IMG_8417.MOV",
+     "at": 112.25,
+     "in": 3.5,
+     "dur": 1.5,
+     "psrc": "seg/b1_12.mp4"
     },
     {
      "src": "dia1/IMG_8422.MOV",
-     "at": 107.75,
-     "in": 0,
-     "dur": 6.0
+     "at": 113.75,
+     "in": 3.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_13.mp4"
     },
     {
      "src": "dia1/IMG_8425.MOV",
-     "at": 107.75,
-     "in": 0,
-     "dur": 3.75
+     "at": 115.25,
+     "in": 1.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_14.mp4"
+    },
+    {
+     "src": "dia1/IMG_8425.MOV",
+     "at": 116.75,
+     "in": 3.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_15.mp4"
+    },
+    {
+     "src": "dia1/IMG_8425.MOV",
+     "at": 118.25,
+     "in": 4.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_16.mp4"
+    },
+    {
+     "src": "dia1/IMG_8431.MOV",
+     "at": 119.75,
+     "in": 3.5,
+     "dur": 1.75,
+     "psrc": "seg/b1_17.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 121.5,
-     "in": 5.3,
-     "dur": 10.0
+     "in": 107.7,
+     "dur": 10.0,
+     "psrc": "seg/b1_18.mp4"
     },
     {
      "src": "dia1/IMG_8403.MOV",
      "at": 131.5,
      "in": 2.0,
-     "dur": 3.75
+     "dur": 3.75,
+     "psrc": "seg/b1_19.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 135.25,
-     "in": 122.75,
-     "dur": 4.5
+     "in": 121.45,
+     "dur": 4.5,
+     "psrc": "seg/b1_20.mp4"
     },
     {
      "src": "dia1/IMG_8425.MOV",
      "at": 139.75,
      "in": 2.0,
-     "dur": 3.25
+     "dur": 3.25,
+     "psrc": "seg/b1_21.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 143.0,
-     "in": 130.525,
-     "dur": 0.75
+     "in": 129.2,
+     "dur": 0.75,
+     "psrc": "seg/b1_22.mp4"
     },
     {
      "src": "dia1/IMG_8417.MOV",
      "at": 143.75,
-     "in": 2.0,
-     "dur": 3.75
+     "in": 2.5,
+     "dur": 3.75,
+     "psrc": "seg/b1_23.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 147.5,
-     "in": 136.35,
-     "dur": 2.5
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 150.0,
-     "in": 137.6,
-     "dur": 5.0
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 155.0,
-     "in": 143.1,
-     "dur": 15.0
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 170.0,
-     "in": 157.7,
-     "dur": 21.0
+     "in": 133.7,
+     "dur": 43.5,
+     "psrc": "seg/b1_24.mp4"
     },
     {
      "src": "dia2/IMG_8472.MOV",
      "at": 191.0,
      "in": 2.0,
-     "dur": 3.75
+     "dur": 3.75,
+     "psrc": "seg/b1_25.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 194.75,
-     "in": 182.5,
-     "dur": 5.5
+     "in": 180.95,
+     "dur": 5.5,
+     "psrc": "seg/b1_26.mp4"
     },
     {
      "src": "dia2/IMG_8464.MOV",
      "at": 200.25,
-     "in": 0,
-     "dur": 3.0
+     "in": 0.0,
+     "dur": 3.0,
+     "psrc": "seg/b1_27.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 203.25,
-     "in": 191.1,
-     "dur": 67.25
+     "in": 189.45,
+     "dur": 67.25,
+     "psrc": "seg/b1_28.mp4"
     },
     {
      "src": "trading_nitido.mp4",
      "at": 270.5,
-     "in": 0,
-     "dur": 44.0
+     "in": 0.0,
+     "dur": 44.0,
+     "psrc": "seg/b1_29.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 314.5,
-     "in": 15.3,
-     "dur": 6.0
+     "in": 256.7,
+     "dur": 6.0,
+     "psrc": "seg/b1_30.mp4"
     },
     {
-     "src": "dia2/IMG_8467.MOV",
+     "src": "dia1/IMG_8388.MOV",
      "at": 320.5,
-     "in": 0.2,
-     "dur": 0.75
+     "in": 64.0,
+     "dur": 0.75,
+     "psrc": "seg/b1_31.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 321.25,
-     "in": 21.3,
-     "dur": 47.5
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 368.75,
-     "in": 318.2,
-     "dur": 2.5
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 371.25,
-     "in": 321.4,
-     "dur": 17.5
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 388.75,
-     "in": 341.6,
-     "dur": 6.0
+     "in": 263.45,
+     "dur": 73.5,
+     "psrc": "seg/b1_32.mp4"
     },
     {
      "src": "dia2/IMG_8488.MOV",
      "at": 394.75,
      "in": 2.0,
-     "dur": 3.75
+     "dur": 1.5,
+     "psrc": "seg/b1_33.mp4"
+    },
+    {
+     "src": "dia2/IMG_8488.MOV",
+     "at": 396.25,
+     "in": 3.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_34.mp4"
+    },
+    {
+     "src": "dia2/IMG_8488.MOV",
+     "at": 397.75,
+     "in": 5.5,
+     "dur": 0.75,
+     "psrc": "seg/b1_35.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 398.5,
-     "in": 351.4,
-     "dur": 2.25
+     "in": 340.7,
+     "dur": 2.25,
+     "psrc": "seg/b1_36.mp4"
     },
     {
      "src": "dia2/IMG_8477.MOV",
      "at": 400.75,
      "in": 2.0,
-     "dur": 3.75
+     "dur": 3.75,
+     "psrc": "seg/b1_37.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 404.5,
-     "in": 357.375,
-     "dur": 1.25
+     "in": 346.683,
+     "dur": 1.25,
+     "psrc": "seg/b1_38.mp4"
     },
     {
      "src": "dia2/IMG_8472.MOV",
      "at": 405.75,
      "in": 5.0,
-     "dur": 3.75
+     "dur": 1.5,
+     "psrc": "seg/b1_39.mp4"
+    },
+    {
+     "src": "dia2/IMG_8472.MOV",
+     "at": 407.25,
+     "in": 6.5,
+     "dur": 1.5,
+     "psrc": "seg/b1_40.mp4"
+    },
+    {
+     "src": "dia2/IMG_8472.MOV",
+     "at": 408.75,
+     "in": 8.5,
+     "dur": 0.75,
+     "psrc": "seg/b1_41.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 409.5,
-     "in": 362.425,
-     "dur": 3.0
+     "in": 351.7,
+     "dur": 3.0,
+     "psrc": "seg/b1_42.mp4"
     },
     {
      "src": "dia2/IMG_8505.MOV",
      "at": 412.5,
      "in": 1.0,
-     "dur": 3.25
+     "dur": 3.25,
+     "psrc": "seg/b1_43.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 415.75,
-     "in": 368.7,
-     "dur": 15.0
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 430.75,
-     "in": 384.25,
-     "dur": 2.0
+     "in": 357.95,
+     "dur": 17.0,
+     "psrc": "seg/b1_44.mp4"
     },
     {
      "src": "dia2/IMG_8469.MOV",
      "at": 432.75,
      "in": 1.0,
-     "dur": 4.0
+     "dur": 1.5,
+     "psrc": "seg/b1_45.mp4"
+    },
+    {
+     "src": "dia2/IMG_8469.MOV",
+     "at": 434.25,
+     "in": 2.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_46.mp4"
+    },
+    {
+     "src": "dia2/IMG_8469.MOV",
+     "at": 435.75,
+     "in": 4.0,
+     "dur": 1.0,
+     "psrc": "seg/b1_47.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 436.75,
-     "in": 389.8,
-     "dur": 46.75
+     "in": 378.95,
+     "dur": 9.75,
+     "psrc": "seg/b1_48.mp4"
+    },
+    {
+     "src": "dia2/IMG_8497.MOV",
+     "at": 446.5,
+     "in": 4.5,
+     "dur": 3.5,
+     "psrc": "seg/b1_49.mp4"
+    },
+    {
+     "src": "vlog_nitido.mp4",
+     "at": 450.0,
+     "in": 392.2,
+     "dur": 20.5,
+     "psrc": "seg/b1_50.mp4"
+    },
+    {
+     "src": "dia2/IMG_8497.MOV",
+     "at": 470.5,
+     "in": 28.5,
+     "dur": 6.7,
+     "psrc": "seg/b1_51.mp4"
+    },
+    {
+     "src": "vlog_nitido.mp4",
+     "at": 477.2,
+     "in": 419.4,
+     "dur": 6.3,
+     "psrc": "seg/b1_52.mp4"
     },
     {
      "src": "trading_nitido.mp4",
      "at": 483.5,
      "in": 44.0,
-     "dur": 42.5
+     "dur": 42.5,
+     "psrc": "seg/b1_53.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 526.0,
-     "in": 438.35,
-     "dur": 37.75
+     "in": 427.25,
+     "dur": 37.75,
+     "psrc": "seg/b1_54.mp4"
     },
     {
      "src": "dia2/IMG_8506.MOV",
      "at": 563.75,
      "in": 2.0,
-     "dur": 3.75
+     "dur": 1.5,
+     "psrc": "seg/b1_55.mp4"
+    },
+    {
+     "src": "trading_nitido.mp4",
+     "at": 565.25,
+     "in": 91.5,
+     "dur": 1.5,
+     "psrc": "seg/b1_56.mp4"
+    },
+    {
+     "src": "trading_nitido.mp4",
+     "at": 566.75,
+     "in": 93.5,
+     "dur": 0.75,
+     "psrc": "seg/b1_57.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 567.5,
-     "in": 480.0,
-     "dur": 57.5
+     "in": 468.75,
+     "dur": 130.0,
+     "psrc": "seg/b1_58.mp4"
     },
     {
-     "src": "vlog_nitido.mp4",
-     "at": 625.0,
-     "in": 537.9,
-     "dur": 72.5
-    },
-    {
-     "src": "trading_nitido.mp4",
+     "src": "dia2/IMG_8507.MOV",
      "at": 697.5,
-     "in": 0,
-     "dur": 13.0
+     "in": 0.5,
+     "dur": 13.0,
+     "psrc": "seg/b1_59.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 710.5,
-     "in": 68.8,
-     "dur": 2.0
+     "in": 599.183,
+     "dur": 2.0,
+     "psrc": "seg/b1_60.mp4"
+    },
+    {
+     "src": "dia2/IMG_8479.MOV",
+     "at": 712.5,
+     "in": 7.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_61.mp4"
     },
     {
      "src": "trading_nitido.mp4",
-     "at": 712.5,
-     "in": 6.5,
-     "dur": 5.75
+     "at": 714.0,
+     "in": 12.5,
+     "dur": 1.5,
+     "psrc": "seg/b1_62.mp4"
+    },
+    {
+     "src": "dia2/IMG_8483.MOV",
+     "at": 715.5,
+     "in": 45.5,
+     "dur": 1.5,
+     "psrc": "seg/b1_63.mp4"
+    },
+    {
+     "src": "dia2/IMG_8506.MOV",
+     "at": 717.0,
+     "in": 5.0,
+     "dur": 1.25,
+     "psrc": "seg/b1_64.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 718.25,
-     "in": 70.8,
-     "dur": 2.0
+     "in": 606.933,
+     "dur": 2.0,
+     "psrc": "seg/b1_65.mp4"
     },
     {
      "src": "dia2/IMG_8479.MOV",
      "at": 720.25,
-     "in": 1.8,
-     "dur": 3.75
+     "in": 1.5,
+     "dur": 3.75,
+     "psrc": "seg/b1_66.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 724.0,
-     "in": 72.8,
-     "dur": 14.0
+     "in": 612.683,
+     "dur": 14.0,
+     "psrc": "seg/b1_67.mp4"
     },
     {
      "src": "dia2/IMG_8487.MOV",
      "at": 738.0,
      "in": 2.0,
-     "dur": 3.75
+     "dur": 3.75,
+     "psrc": "seg/b1_68.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 741.75,
-     "in": 642.4,
-     "dur": 5.5
+     "in": 630.433,
+     "dur": 5.5,
+     "psrc": "seg/b1_69.mp4"
     },
     {
      "src": "dia2/IMG_8480.MOV",
      "at": 747.25,
-     "in": 0,
-     "dur": 3.25
+     "in": 0.0,
+     "dur": 1.5,
+     "psrc": "seg/b1_70.mp4"
+    },
+    {
+     "src": "dia2/IMG_8480.MOV",
+     "at": 748.75,
+     "in": 1.5,
+     "dur": 1.75,
+     "psrc": "seg/b1_71.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 750.5,
-     "in": 86.8,
-     "dur": 3.75
+     "in": 639.183,
+     "dur": 3.75,
+     "psrc": "seg/b1_72.mp4"
     },
     {
      "src": "dia2/IMG_8483.MOV",
      "at": 754.25,
-     "in": 1.8,
-     "dur": 3.25
+     "in": 1.5,
+     "dur": 3.25,
+     "psrc": "seg/b1_73.mp4"
     },
     {
      "src": "vlog_nitido.mp4",
      "at": 757.5,
-     "in": 90.55,
-     "dur": 10.0
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 767.5,
-     "in": 96.275,
-     "dur": 2.5
-    },
-    {
-     "src": "vlog_nitido.mp4",
-     "at": 770.0,
-     "in": 661.938,
-     "dur": 0.25
+     "in": 646.183,
+     "dur": 12.75,
+     "psrc": "seg/b1_74.mp4"
     }
    ]
   }

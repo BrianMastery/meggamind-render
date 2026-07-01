@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  AbsoluteFill, Audio, CalculateMetadataFunction, Easing, interpolate, OffthreadVideo,
+  AbsoluteFill, Audio, CalculateMetadataFunction, Easing, getRemotionEnvironment, interpolate, OffthreadVideo, Video,
   Sequence, staticFile, useCurrentFrame, useVideoConfig,
 } from "remotion";
 import { loadFont } from "@remotion/google-fonts/InterTight";
@@ -21,8 +21,32 @@ const fuenteUrl = (plan: RenderPlan, clave: string) => {
   return staticFile(`china/${plan.modo === "proxy" ? f.proxy : f.full}`);
 };
 const brollUrl = (f: string) => staticFile(`china/${f}`);
+// URL de un corte: en modo proxy usa los H264 livianos (Chrome los reproduce); en 4k usa el crudo nativo HEVC.
 const corteUrl = (plan: RenderPlan, src: string) =>
   plan.modo === "proxy" ? staticFile(`china/proxy/${src.replace(/\.MOV$/i, ".mp4")}`) : staticFile(`china/${src}`);
+
+// Fuente de un corte: en PREVIEW (proxy), si hay `psrc` (proxy pre-cortado por toma), usa ESE archivo
+// chico con trim=0 (carga al instante, sin buscar dentro de un archivo grande -> preview fluido). En 4k
+// (render) usa la fuente nativa con su `in`. Misma resolución/calidad; solo cambia cómo está guardado.
+const corteFuente = (plan: RenderPlan, c: { src: string; in: number; psrc?: string }, fps: number) =>
+  plan.modo === "proxy" && c.psrc
+    ? { url: staticFile(`china/proxy/${c.psrc}`), trim: 0 }
+    : { url: corteUrl(plan, c.src), trim: Math.round(c.in * fps) };
+
+// Reproductor según modo: en PREVIEW (proxy) usamos <Video> = el <video> nativo del navegador, que
+// reproduce fluido y sincronizado (sin parpadeo a negro ni brincos). OffthreadVideo está hecho para el
+// RENDER (extrae cada frame por proceso aparte) y en preview parpadea/traba; por eso solo va en modo 4k.
+const ModoCtx = React.createContext<"proxy" | "4k">("4k");
+const Media: React.FC<React.ComponentProps<typeof OffthreadVideo>> = (props) => {
+  const modo = React.useContext(ModoCtx);
+  // Solo en el PREVIEW en vivo (proxy + no renderizando) usamos <Video>. Al RENDERIZAR (nube), siempre
+  // OffthreadVideo = frame-exacto y sincronía perfecta, aunque el modo sea proxy.
+  if (modo === "proxy" && !getRemotionEnvironment().isRendering) {
+    const { toneMapped: _tm, ...rest } = props as React.ComponentProps<typeof OffthreadVideo>;
+    return <Video {...rest} />;
+  }
+  return <OffthreadVideo {...props} />;
+};
 
 // ============ COLOR POR ESCENA (Bloque E, regla del 70%) ============
 const FILTRO: Record<string, string> = {
@@ -41,8 +65,7 @@ const Grade: React.FC<{ preset?: GradeT; liviano?: boolean; children: React.Reac
   // En proxy (preview en la Mac vieja) NADA de color: ni filtro ni viñetas ni blend modes. Solo el
   // video crudo, para que el preview vaya fluido y Brian dirija estructura/broll/zooms/timing. Todo
   // el grade (filtro + viñeta + spotlight + split-tone del Bloque E) se aplica solo en el render 4K.
-  // SIN_COLOR: grade DESACTIVADO para este render (cuerpo en color PLANO/NEUTRO). El grade va
-  // despues, una sola vez, en Resolve sobre todo el video junto. Volver a false para reactivarlo.
+  // SIN_COLOR: grade DESACTIVADO por ahora (localhost y render van planos/neutros; el color va al final). Volver a false para reactivar.
   const SIN_COLOR = true;
   if (liviano || SIN_COLOR) return <>{children}</>;
   return (
@@ -210,7 +233,7 @@ const Cutaway: React.FC<{ b: Broll }> = ({ b }) => {
   const op = interpolate(f, [0, 8, durF - 8, durF], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill style={{ opacity: op }}>
-      <Grade preset={b.grade ?? "A1"}><OffthreadVideo src={brollUrl(b.clip)} muted={!b.ambiente} toneMapped={false} /></Grade>
+      <Grade preset={b.grade ?? "A1"}><Media src={brollUrl(b.clip)} muted={!b.ambiente} toneMapped={false} /></Grade>
     </AbsoluteFill>
   );
 };
@@ -225,7 +248,7 @@ const MontageClip: React.FC<{ c: ClipMontage; durF: number }> = ({ c, durF }) =>
     <AbsoluteFill style={{ opacity: op }}>
       <Grade preset={c.grade ?? "A1"}>
         <AbsoluteFill style={{ transform: `scale(${scale})` }}>
-          <OffthreadVideo src={brollUrl(c.clip)} muted={!c.ambiente} toneMapped={false} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <Media src={brollUrl(c.clip)} muted={!c.ambiente} toneMapped={false} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </AbsoluteFill>
       </Grade>
     </AbsoluteFill>
@@ -281,7 +304,7 @@ const TitleCard: React.FC<{ clip?: string }> = ({ clip }) => {
       {clip ? (
         <Grade preset="A1">
           <AbsoluteFill style={{ transform: `scale(${scale})` }}>
-            <OffthreadVideo src={brollUrl(clip)} muted toneMapped={false} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <Media src={brollUrl(clip)} muted toneMapped={false} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </AbsoluteFill>
         </Grade>
       ) : <AbsoluteFill style={{ backgroundColor: "#05070A" }} />}
@@ -302,36 +325,44 @@ const BloqueAV: React.FC<{ plan: RenderPlan; b: Bloque; caps: Cap[]; durF: numbe
   const { fps } = useVideoConfig();
   const f = useCurrentFrame();
   const t = f / fps;
-  const sg = plan.soloGraficos === true;  // capa alpha: sin video de fondo
-  if (b.tipo === "trailer") return sg ? null : (
-    // Cold open de impacto. MUTEADO: su audio (música misteriosa + voz) va dentro de la mezcla global
-    // audio_full, que cubre TODO el timeline desde el frame 0 (sin offsets -> imposible descuadrar).
+  if (b.tipo === "trailer") return (
+    // Cold open de impacto en 4K NATIVO. Si hay `cortes`, ensambla las escenas desde los crudos 4K
+    // (igual que el cuerpo); si no, cae al video horneado. MUTEADO: su audio (música + voz) va dentro
+    // de la mezcla global audio_full, que cubre TODO el timeline desde el frame 0 (imposible descuadrar).
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <OffthreadVideo src={brollUrl(b.clips?.[0]?.clip ?? "broll/trailer.mp4")} muted toneMapped={false} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      {b.cortes ? b.cortes.map((c, i) => {
+        const cf = corteFuente(plan, c, fps);
+        return (
+        <Sequence key={`tc${i}`} from={Math.round(c.at * fps)} durationInFrames={Math.round(c.dur * fps)} premountFor={plan.modo === "proxy" ? Math.round(2 * fps) : undefined}>
+          <Media src={cf.url} trimBefore={cf.trim} toneMapped={false} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        </Sequence>
+      );}) : (
+        <Media src={brollUrl(b.clips?.[0]?.clip ?? "broll/trailer.mp4")} muted toneMapped={false} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      )}
     </AbsoluteFill>
   );
-  if (b.tipo === "title_card") return sg ? null : <TitleCard clip={b.clips?.[0]?.clip} />;
-  if (b.tipo === "montage") return sg ? null : <Montage clips={b.clips ?? []} />;
+  if (b.tipo === "title_card") return <TitleCard clip={b.clips?.[0]?.clip} />;
+  if (b.tipo === "montage") return <Montage clips={b.clips ?? []} />;
   const grade = b.grade ?? (b.tipo === "trading" ? "B1" : "C1");
   return (
-    <AbsoluteFill style={sg ? undefined : { backgroundColor: "#000" }}>
-      {!sg && (
-        <Grade preset={grade} liviano={plan.modo === "proxy"}>
-          <ConZoom zoom={b.zoom} durF={durF}>
-            {b.cortes ? b.cortes.map((c, i) => (
-              <Sequence key={`co${i}`} from={Math.round(c.at * fps)} durationInFrames={Math.round(c.dur * fps)}>
-                <OffthreadVideo src={corteUrl(plan, c.src)} trimBefore={Math.round(c.in * fps)} toneMapped={false} muted />
-              </Sequence>
-            )) : (
-              <OffthreadVideo src={fuenteUrl(plan, b.fuente ?? "vlog")} trimBefore={Math.round((b.from ?? 0) * fps)} toneMapped={false} muted={!!plan.audio} />
-            )}
-          </ConZoom>
-        </Grade>
-      )}
-      {!sg && (b.broll ?? []).map((br, i) => (
+    <AbsoluteFill style={{ backgroundColor: "#000" }}>
+      <Grade preset={grade} liviano={plan.modo === "proxy"}>
+        <ConZoom zoom={b.zoom} durF={durF}>
+          {b.cortes ? b.cortes.map((c, i) => {
+            const cf = corteFuente(plan, c, fps);
+            return (
+            <Sequence key={`co${i}`} from={Math.round(c.at * fps)} durationInFrames={Math.round(c.dur * fps)} premountFor={plan.modo === "proxy" ? Math.round(2 * fps) : undefined}>
+              <Media src={cf.url} trimBefore={cf.trim} toneMapped={false} muted />
+            </Sequence>
+          );}) : (
+            <Media src={fuenteUrl(plan, b.fuente ?? "vlog")} trimBefore={Math.round((b.from ?? 0) * fps)} toneMapped={false} muted={!!plan.audio} />
+          )}
+        </ConZoom>
+      </Grade>
+      {(b.broll ?? []).map((br, i) => (
         <Sequence key={i} from={Math.round(br.at * fps)} durationInFrames={Math.round(br.dur * fps)}><Cutaway b={br} /></Sequence>
       ))}
-      {!sg && (b.vertical ?? []).map((v, i) => (
+      {(b.vertical ?? []).map((v, i) => (
         <Sequence key={`v${i}`} from={Math.round(v.at * fps)} durationInFrames={Math.round(v.dur * fps)}><VerticalInsert {...v} /></Sequence>
       ))}
       {(b.lowerThirds ?? []).map((lt, i) => <LowerThird key={`l${i}`} {...lt} dentro={t >= lt.at && t <= lt.at + lt.dur} />)}
@@ -345,7 +376,7 @@ const BloqueAV: React.FC<{ plan: RenderPlan; b: Bloque; caps: Cap[]; durF: numbe
 const VerticalInsert: React.FC<VertT> = ({ clip, forma = "marco", texto, clip2 }) => {
   const { height } = useVideoConfig();
   const k = height / 1080;
-  const vid = (c: string) => <OffthreadVideo src={brollUrl(c)} style={{ height: "100%", width: "100%", objectFit: "cover" }} toneMapped={false} />;
+  const vid = (c: string) => <Media src={brollUrl(c)} style={{ height: "100%", width: "100%", objectFit: "cover" }} toneMapped={false} />;
   const BG = "#05070A";
 
   if (forma === "centrado") {
@@ -404,15 +435,13 @@ export const Vlog: React.FC<VlogProps> = ({ plan, subs }) => {
   let offSubF = 0;
   for (const b of plan.timeline) { if (b.tipo === "habla") break; offSubF += bloqueDur(b, fps); }
   const offSubSec = offSubF / fps;
-  const sg = plan.soloGraficos === true;  // capa alpha (sin fondo ni audio): se compone sobre el HDR
   return (
-    <AbsoluteFill style={sg ? undefined : { backgroundColor: "#000" }}>
+   <ModoCtx.Provider value={plan.modo ?? "4k"}>
+    <AbsoluteFill style={{ backgroundColor: "#000" }}>
       {/* Pista de audio global ÚNICA: audio_full cubre TODO el timeline (trailer + title + habla) desde
           el frame 0. Sin Sequence ni offset -> el audio nunca se puede descuadrar. Todos los videos
           van muteados (incluido el trailer, cuyo audio ya está dentro de esta mezcla). */}
-      {/* En soloGraficos mantenemos el audio: este render entrega la mezcla final completa
-          (audio_full música+voz + los SFX de las transiciones) que se muxea al MP4 HDR. */}
-      {plan.audio && !sg && <Audio src={staticFile(`china/${plan.audio}`)} />}
+      {plan.audio && <Audio src={staticFile(`china/${plan.audio}`)} />}
       {plan.timeline.map((b, i) => {
         const durF = bloqueDur(b, fps);
         const from = acc; acc += durF;
@@ -436,9 +465,9 @@ export const Vlog: React.FC<VlogProps> = ({ plan, subs }) => {
         const at = Math.round((tr.at + offSubSec) * fps);
         return (
           <Sequence key={`t${i}`} from={at - Math.round(d / 2)} durationInFrames={d}>
-            {tr.tipo === "dip_black" ? <DipBlack durF={d} sinAudio={sg} />
-              : tr.tipo === "whip" ? <Whip durF={d} whoosh={tr.whoosh === true} sinAudio={sg} />
-              : <ImpactoCian durF={d} fuerza={tr.fuerza ?? "fuerte"} whoosh={tr.whoosh !== false} sinAudio={sg} />}
+            {tr.tipo === "dip_black" ? <DipBlack durF={d} />
+              : tr.tipo === "whip" ? <Whip durF={d} whoosh={tr.whoosh === true} />
+              : <ImpactoCian durF={d} fuerza={tr.fuerza ?? "fuerte"} whoosh={tr.whoosh !== false} />}
           </Sequence>
         );
       })}
@@ -450,6 +479,7 @@ export const Vlog: React.FC<VlogProps> = ({ plan, subs }) => {
         </Sequence>
       )}
     </AbsoluteFill>
+   </ModoCtx.Provider>
   );
 };
 
@@ -460,14 +490,14 @@ const FadeFromBlack: React.FC<{ durF: number }> = ({ durF }) => {
   return <AbsoluteFill style={{ backgroundColor: "#000", opacity: op }} />;
 };
 
-const DipBlack: React.FC<{ durF: number; sinAudio?: boolean }> = ({ durF, sinAudio }) => {
+const DipBlack: React.FC<{ durF: number }> = ({ durF }) => {
   const f = useCurrentFrame();
   // MESETA: sube a negro pleno, se MANTIENE (cubre el residuo de escena no deseado) y baja revelando la
   // escena buena. ~50% de la duración en negro total.
   const op = interpolate(f, [0, durF * 0.22, durF * 0.72, durF], [0, 1, 1, 0], { easing: APPLE, extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <AbsoluteFill style={{ backgroundColor: "#000", opacity: op }}>
-      {!sinAudio && <Audio src={staticFile("china/audio/sfx/sub_drop.mp3")} volume={0.4} />}
+      <Audio src={staticFile("china/audio/sfx/sub_drop.mp3")} volume={0.4} />
     </AbsoluteFill>
   );
 };
@@ -475,7 +505,7 @@ const DipBlack: React.FC<{ durF: number; sinAudio?: boolean }> = ({ durF, sinAud
 // Whip / desenfoque de movimiento: latigazo de corte dinámico para B-roll y viaje. Desenfoque fuerte
 // y breve sobre lo que hay debajo (backdrop blur), con leve oscurecida + micro-empuje horizontal que
 // da la dirección del barrido. Sin negro pleno: la imagen no se va, se "barre". Whoosh corto opcional.
-const Whip: React.FC<{ durF: number; whoosh: boolean; sinAudio?: boolean }> = ({ durF, whoosh, sinAudio }) => {
+const Whip: React.FC<{ durF: number; whoosh: boolean }> = ({ durF, whoosh }) => {
   const f = useCurrentFrame();
   const blur = interpolate(f, [0, durF * 0.5, durF], [0, 28, 0], { easing: APPLE, extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const dark = interpolate(f, [0, durF * 0.5, durF], [0, 0.34, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -487,7 +517,7 @@ const Whip: React.FC<{ durF: number; whoosh: boolean; sinAudio?: boolean }> = ({
     <AbsoluteFill>
       <AbsoluteFill style={{ backdropFilter: `blur(${blur}px)`, WebkitBackdropFilter: `blur(${blur}px)`, backgroundColor: `rgba(5,7,10,${dark})` } as React.CSSProperties} />
       <AbsoluteFill style={{ background: band, opacity: 0.9, pointerEvents: "none" }} />
-      {whoosh && !sinAudio && <Audio src={staticFile("china/audio/sfx/whip_swoosh.mp3")} volume={0.6} />}
+      {whoosh && <Audio src={staticFile("china/audio/sfx/whip_swoosh.mp3")} volume={0.6} />}
     </AbsoluteFill>
   );
 };
@@ -496,7 +526,7 @@ const Whip: React.FC<{ durF: number; whoosh: boolean; sinAudio?: boolean }> = ({
 // 1) Negro entra rápido y profundo (pico ~40% del tramo). 2) Al reabrir, una BANDA de luz cian barre
 // la pantalla en horizontal con glow (screen blend) — energía con el color de marca, no un flash blanco
 // barato. "rapido" no llega a negro pleno (corte interno); "fuerte" sí (cambio de capítulo).
-const ImpactoCian: React.FC<{ durF: number; fuerza: "fuerte" | "rapido"; whoosh: boolean; sinAudio?: boolean }> = ({ durF, fuerza, whoosh, sinAudio }) => {
+const ImpactoCian: React.FC<{ durF: number; fuerza: "fuerte" | "rapido"; whoosh: boolean }> = ({ durF, fuerza, whoosh }) => {
   const f = useCurrentFrame();
   const peak = fuerza === "fuerte" ? 1 : 0.8;
   // dip a negro: sube rápido a 'peak' (~40%), breve meseta, baja
@@ -511,13 +541,15 @@ const ImpactoCian: React.FC<{ durF: number; fuerza: "fuerte" | "rapido"; whoosh:
     <AbsoluteFill>
       <AbsoluteFill style={{ backgroundColor: "#000", opacity: black }} />
       <AbsoluteFill style={{ background: band, opacity: glow, mixBlendMode: "screen", pointerEvents: "none" }} />
-      {whoosh && !sinAudio && <Audio src={staticFile("china/audio/sfx/impact_cian.mp3")} volume={fuerza === "fuerte" ? 0.9 : 0.55} />}
+      {whoosh && <Audio src={staticFile("china/audio/sfx/impact_cian.mp3")} volume={fuerza === "fuerte" ? 0.9 : 0.55} />}
     </AbsoluteFill>
   );
 };
 
 export const calcVlog: CalculateMetadataFunction<VlogProps> = async () => {
-  const plan: RenderPlan = await fetch(staticFile("render_plan.json")).then((r) => r.json());
+  const plan: RenderPlan = await fetch(staticFile("render_plan.json"))
+    .then((r) => r.json())
+    .catch(() => ({ fps: 60, modo: "4k", fuentes: {}, timeline: [] } as unknown as RenderPlan)); // pre-cómputo Node: fetch da ruta; el navegador recarga el plan real
   const subs: Sub[] = await fetch(staticFile("china/subs/subs.json")).then((r) => (r.ok ? r.json() : [])).catch(() => []);
   const fps = plan.fps ?? 60;
   const total = (plan.timeline ?? []).reduce((s, b) => s + bloqueDur(b, fps), 0);
