@@ -52,8 +52,8 @@ jobs:
         env: { NPROC: "4", FF: "ffmpeg", FFP: "ffprobe" }
         run: |
           python3 color_driver.py "${{ matrix.seg.file }}" "${{ matrix.seg.off }}" "c_${{ matrix.seg.file }}"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: "c_${{ matrix.seg.file }}"
-          path: "video/c_${{ matrix.seg.file }}"
-          retention-days: 2
+      - name: subir coloreado al repo PRIVADO (no artifacts públicos)
+        working-directory: video
+        env: { GH_TOKEN: "${{ secrets.SRC_TOKEN }}" }
+        run: |
+          gh release upload colored -R BrianMastery/vlog-color-src "c_${{ matrix.seg.file }}" --clobber
