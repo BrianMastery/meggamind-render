@@ -1,9 +1,9 @@
-import { Composition, staticFile } from "remotion";
+import { Composition, staticFile, OffthreadVideo, AbsoluteFill } from "remotion";
 import { DEMO, DEMO_CAPTIONS } from "./demo";
 import { OverlaySerie, OverlayProps } from "./OverlaySerie";
 import { Subtitulos, SubtitulosProps } from "./Subtitulos";
 import { Vlog, calcVlog, VlogProps } from "./Vlog";
-import { Reel, ReelProps } from "./Reel";
+import { Reel, calcReel, ReelProps } from "./Reel";
 import { FPS } from "./theme";
 
 // La duración del overlay se ajusta al último evento (lo usa el render real).
@@ -21,9 +21,25 @@ const calcSubs = ({ props }: { props: SubtitulosProps }) => {
   return { durationInFrames: Math.max(FPS, Math.round((last / 1000 + 0.5) * FPS)), fps: FPS };
 };
 
+// Prueba de fluidez: composición 4K mínima que solo reproduce un clip H264 4K.
+// Sirve para validar si la Mac 2018 previsualiza 4K nativo con fluidez antes de montar todo.
+const Preview4K: React.FC = () => (
+  <AbsoluteFill style={{ backgroundColor: "#000" }}>
+    <OffthreadVideo src={staticFile("preview4k_test.mp4")} toneMapped={false} />
+  </AbsoluteFill>
+);
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition
+        id="Preview4K"
+        component={Preview4K}
+        fps={60}
+        width={3840}
+        height={2160}
+        durationInFrames={3600}
+      />
       <Composition
         id="OverlayVertical"
         component={OverlaySerie}
@@ -76,7 +92,7 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{ plan: { fps: 60, modo: "4k", fuentes: {}, timeline: [] }, subs: [] } as VlogProps}
         calculateMetadata={calcVlog}
       />
-      {/* Reel vertical de prueba (gate end-to-end): canvas 1080x1920, render con --scale=2. */}
+      {/* Reel vertical dirigido por reel_plan.json (public-dir = short_cuenta). */}
       <Composition
         id="Reel"
         component={Reel}
@@ -84,13 +100,8 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         durationInFrames={600}
-        defaultProps={{
-          src: "reel/base_sdr_10s.mp4",
-          captions: [
-            { text: "prueba end-to-end del pipeline", startMs: 800, endMs: 4200, keyword: "pipeline" },
-            { text: "vertical 4K desde Remotion", startMs: 4600, endMs: 9200, keyword: "4K" },
-          ],
-        } as ReelProps}
+        defaultProps={{ plan: null } as ReelProps}
+        calculateMetadata={calcReel}
       />
     </>
   );
