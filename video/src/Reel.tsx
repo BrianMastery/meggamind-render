@@ -66,18 +66,27 @@ const Cam: React.FC<{ p: Pieza; modo: Plan["modo"]; muted: boolean }> = ({ p, mo
   const top = Math.min(0, Math.max(CH - dispH, CH / 2 - cy * (dispH / SRC_H)));
   const src = staticFile(`${modo === "proxy" ? "psrc" : "rsrc"}/${p.src}`);
   if (r.fit) {
-    // panel 16:9 completo sobre fondo de marca (para POV/planos que no aguantan crop 9:16)
+    // punch-in 16:9: panel completo con FONDO DE RELLENO BLUR del mismo video (nada de vacío negro)
     const pw = CW, ph = Math.round((CW * 9) / 16);
     return (
-      <AbsoluteFill style={{ backgroundColor: "#05070A" }}>
+      <AbsoluteFill style={{ backgroundColor: "#05070A", overflow: "hidden" }}>
+        <Media
+          src={src}
+          muted
+          style={{
+            position: "absolute", width: CW * 2.6, height: CH * 1.5, left: -CW * 0.8, top: -CH * 0.25,
+            maxWidth: "none", objectFit: "cover",
+            filter: "blur(46px) brightness(0.38) saturate(1.1)",
+          }}
+        />
         <div style={{
           position: "absolute", left: -200, top: CH * 0.22, width: CW + 400, height: ph + 400,
-          background: "radial-gradient(closest-side, rgba(0,229,255,0.08), rgba(0,229,255,0))",
+          background: "radial-gradient(closest-side, rgba(0,229,255,0.07), rgba(0,229,255,0))",
         }} />
         <div style={{
           position: "absolute", left: 0, top: Math.round(CH * 0.30), width: pw, height: ph,
           overflow: "hidden", borderRadius: 18,
-          boxShadow: "0 26px 70px rgba(0,0,0,0.6)",
+          boxShadow: "0 26px 70px rgba(0,0,0,0.65)",
           transform: `scale(${1 + (zoom - (r.zoom ?? 1)) * 0.5 + 0.0})`,
         }}>
           <Media src={src} muted={muted} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
