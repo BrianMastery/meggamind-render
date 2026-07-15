@@ -63,9 +63,11 @@ async function descargar(key, destino, intentos = 3) {
 function piezasDelTramo(plan) {
   const fps = plan.fps ?? 60;
   const s = new Set();
+  // margen +120 frames al final: premountFor(2s) monta la pieza siguiente ANTES de su
+  // inicio — si empieza justo después del tramo, el archivo igual tiene que existir.
   const cubre = (at, dur) => {
     const f0 = Math.round(at * fps), f1 = Math.round((at + dur) * fps);
-    return f1 >= FROM && f0 <= TO;
+    return f1 >= FROM && f0 <= TO + 120;
   };
   for (const p of plan.piezas) {
     if (!cubre(p.at, p.dur)) continue;
