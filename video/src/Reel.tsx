@@ -30,6 +30,7 @@ export type Overlay = {
   tipo: string; at: number; dur: number; in: number;
   pip?: boolean; titulo?: string; srcZoom?: number; srcY?: number;
   alpha?: boolean; palabras?: Record<string, number>;
+  blurs?: { x: number; y: number; w: number; h: number; desde?: number }[];
 };
 export type Sub = { text: string; startMs: number; endMs: number; keyword?: string };
 export type Evento = { tipo: "punch" | "glide" | "impacto"; at: number };
@@ -56,9 +57,11 @@ const BG = "#05070A";
 const CIAN = "#00E5FF";
 const ANIM_F = 18; // 0.3s @60fps — entrada/salida elegante unificada
 
-const Media: React.FC<{ src: string; muted?: boolean; style?: React.CSSProperties; trimBefore?: number }> = (p) => {
+const Media: React.FC<{ src: string; muted?: boolean; style?: React.CSSProperties; trimBefore?: number; transparent?: boolean }> = (p) => {
   const C = getRemotionEnvironment().isRendering && !FORCE_VIDEO_TAG ? OffthreadVideo : Video;
-  return <C src={p.src} muted={p.muted} style={p.style} toneMapped={false} trimBefore={p.trimBefore} pauseWhenBuffering />;
+  // transparent: OBLIGATORIO para webm con alpha en render (OffthreadVideo lo dibuja OPACO
+  // sin este prop y tapa el texto detrás de la cabeza — bug del primer render 4K).
+  return <C src={p.src} muted={p.muted} style={p.style} toneMapped={false} trimBefore={p.trimBefore} pauseWhenBuffering transparent={p.transparent} />;
 };
 
 // entrada/salida elegante: slide-up + escala 0.96→1 + fade (y la inversa al salir)
@@ -307,6 +310,20 @@ const Screencast: React.FC<{ o: Overlay; plan: Plan }> = ({ o, plan }) => {
               transform: `scale(${srcZoom * drift}) translateY(${srcY}%)`,
             }}
           />
+          {/* blurs de privacidad (receta en el plan): tapan datos personales del screencast */}
+          {(o.blurs ?? []).map((bl, bi) =>
+            frame >= Math.round((bl.desde ?? 0) * fps) ? (
+              <div
+                key={bi}
+                style={{
+                  position: "absolute",
+                  left: `${bl.x * 100}%`, top: `${bl.y * 100}%`,
+                  width: `${bl.w * 100}%`, height: `${bl.h * 100}%`,
+                  backdropFilter: "blur(34px)", WebkitBackdropFilter: "blur(34px)",
+                  backgroundColor: "rgba(244,247,250,0.35)", borderRadius: 14,
+                }}
+              />
+            ) : null)}
         </div>
         {/* PANEL 2: Brian en plano medio */}
         <div
@@ -409,6 +426,7 @@ const HookTitulo: React.FC<{ o: Overlay; plan: Plan }> = ({ o, plan }) => {
           <Media
             src={staticFile(plan.modo === "proxy" ? "fuentes/hook_alpha_proxy.webm" : "fuentes/hook_alpha.webm")}
             muted
+            transparent
             style={{ position: "absolute", width: dispW, height: dispH, left, top: 0, maxWidth: "none" }}
           />
         ) : null}

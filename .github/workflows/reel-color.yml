@@ -1,6 +1,7 @@
-# Color del REEL en la nube: matrix de 63 piezas (motor V3, esc fijo por fuente,
-# pre-pass del cierre con máscara DeepLab por frame) + hook_alpha coloreado.
-# Entrada: reel/rsrc/ en R2. Salida: reel/crsrc/ + reel/fuentes/hook_alpha_color.webm.
+# Color v2 del REEL: conform+color EN UNO desde los cortes HLG crudos (reel/hlg/) con la
+# ingesta BT.2390 (motor_hdr) + textura del motor V3. Alineación por imagen contra la pieza
+# aprobada (referencias_alineacion.npz). Al final regenera hook_alpha desde la pieza nueva.
+# Salida: reel/crsrc/ + reel/fuentes/hook_alpha_color.webm
 name: reel-color
 
 on:
@@ -9,6 +10,9 @@ on:
       solo:
         description: "Opcional: nombre exacto de UNA pieza a re-colorear (rescate)"
         default: ""
+      textura:
+        description: "1 = BT.2390 + textura (aprobado), 0 = base pura"
+        default: "1"
 
 jobs:
   plan:
@@ -45,21 +49,26 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
           python3 -m pip install --quiet numpy opencv-python-headless boto3
-      - name: deps torch (solo cierre 7754)
-        if: matrix.pieza.fuente == 'IMG_7754'
-        run: python3 -m pip install --quiet torch torchvision --index-url https://download.pytorch.org/whl/cpu
-      - name: bajar pieza de R2
+      - name: bajar corte HLG de R2
         working-directory: video
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
-        run: python3 r2_util.py down "reel/rsrc/${{ matrix.pieza.file }}" "${{ matrix.pieza.file }}"
-      - name: colorear (motor V3)
+        run: |
+          CORTE=$(echo "${{ matrix.pieza.file }}" | sed 's/\.mp4$/.mov/')
+          python3 r2_util.py down "reel/hlg/$CORTE" "$CORTE"
+      - name: conform + color (ingesta BT.2390 + textura V3)
         working-directory: video
-        env: { NPROC: "2", FF: "ffmpeg", FFP: "ffprobe" }
-        run: python3 reel_color_driver.py "${{ matrix.pieza.file }}" "${{ matrix.pieza.fuente }}" "${{ matrix.pieza.frames }}" "c_${{ matrix.pieza.file }}"
+        env:
+          NPROC: "2"
+          FF: "ffmpeg"
+          FFP: "ffprobe"
+          TEXTURA: ${{ github.event.inputs.textura }}
+        run: |
+          CORTE=$(echo "${{ matrix.pieza.file }}" | sed 's/\.mp4$/.mov/')
+          python3 reel_color_driver2.py "$CORTE" "${{ matrix.pieza.file }}" "${{ matrix.pieza.frames }}" "c_${{ matrix.pieza.file }}"
       - name: subir coloreada a R2
         working-directory: video
         env:
@@ -70,6 +79,7 @@ jobs:
         run: python3 r2_util.py up "c_${{ matrix.pieza.file }}" "reel/crsrc/${{ matrix.pieza.file }}"
 
   hook_alpha:
+    needs: color
     runs-on: ubuntu-latest
     timeout-minutes: 340
     if: github.event.inputs.solo == ''
@@ -79,19 +89,19 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
-          python3 -m pip install --quiet numpy opencv-python-headless boto3
-      - name: bajar hook_alpha de R2
+          python3 -m pip install --quiet numpy boto3 pillow
+          python3 -m pip install --quiet torch torchvision --index-url https://download.pytorch.org/whl/cpu
+      - name: bajar pieza del hook COLOREADA
         working-directory: video
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
-        run: python3 r2_util.py down "reel/fuentes/hook_alpha.webm" "hook_alpha.webm"
-      - name: colorear capa alpha (esc de IMG_7747)
+        run: python3 r2_util.py down "reel/crsrc/IMG_7747_4740_9040.mp4" hook_pieza.mp4
+      - name: máscara de persona por frame -> webm alpha
         working-directory: video
-        env: { FF: "ffmpeg" }
-        run: python3 reel_color_alpha.py hook_alpha.webm hook_alpha_color.webm
+        run: python3 reel_hook_alpha2.py hook_pieza.mp4 hook_alpha_color.webm
       - name: subir a R2
         working-directory: video
         env:
